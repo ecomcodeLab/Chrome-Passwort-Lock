@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Browser Lock Settings</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container large">
+    <div class="text-center mb-4">
+      <h2>Extension Settings</h2>
+    </div>
+
+    <div id="status-msg" class="message"></div>
+
+    <!-- Auto-Lock Settings -->
+    <div class="mb-4">
+      <h3>Auto-Lock Settings</h3>
+      <hr style="margin: 1rem 0;">
+      
+      <div class="checkbox-group">
+        <input type="checkbox" id="idle-enable">
+        <label for="idle-enable">Enable Auto-Lock when idle</label>
+      </div>
+      
+      <div class="form-group">
+        <label for="idle-time">Idle Timeout Duration</label>
+        <select id="idle-time">
+          <option value="60">1 minute</option>
+          <option value="180">3 minutes</option>
+          <option value="300" selected>5 minutes (Default)</option>
+          <option value="600">10 minutes</option>
+          <option value="900">15 minutes</option>
+          <option value="1800">30 minutes</option>
+          <option value="3600">1 hour</option>
+        </select>
+      </div>
+      <button id="btn-save-idle">Save Auto-Lock Settings</button>
+    </div>
+
+    <!-- Change Password -->
+    <div class="mb-4">
+      <h3>Change Master Password</h3>
+      <hr style="margin: 1rem 0;">
+      
+      <div class="form-group">
+        <input type="password" id="current-password" placeholder="Current Password">
+      </div>
+      <div class="form-group">
+        <input type="password" id="new-password" placeholder="New Password (min 6 chars)">
+      </div>
+      <div class="form-group">
+        <input type="password" id="confirm-new-password" placeholder="Confirm New Password">
+      </div>
+      <button id="btn-change-password">Update Password</button>
+    </div>
+
+    <!-- Security Questions -->
+    <div class="mb-2">
+      <h3>Update Security Questions</h3>
+      <hr style="margin: 1rem 0;">
+      
+      <div id="sq-verify-section">
+        <p class="mb-3">Verify your current password to update security questions.</p>
+        <div class="form-group">
+          <input type="password" id="sq-current-password" placeholder="Current Password">
+        </div>
+        <button id="btn-verify-sq">Verify to Update</button>
+      </div>
+
+      <div id="sq-update-section" style="display: none;">
+        <div class="form-group">
+          <label>Question 1</label>
+          <select id="q1"></select>
+          <input type="text" id="a1" placeholder="New Answer" class="mt-1">
+        </div>
+        <div class="form-group">
+          <label>Question 2</label>
+          <select id="q2"></select>
+          <input type="text" id="a2" placeholder="New Answer" class="mt-1">
+        </div>
+        <div class="form-group">
+          <label>Question 3</label>
+          <select id="q3"></select>
+          <input type="text" id="a3" placeholder="New Answer" class="mt-1">
+        </div>
+        <button id="btn-save-sq">Save Security Questions</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="utils.js"></script>
+  <script src="settings.js"></script>
+</body>
+</html>
