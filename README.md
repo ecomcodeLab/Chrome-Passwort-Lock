@@ -1,3 +1,5 @@
+<img width="595" height="478" alt="image" src="https://github.com/user-attachments/assets/3e2ec160-f1f2-4281-9f08-788af95a58a2" />
+
 # Browser Password Protection Extension
 
 A cross-browser extension built with Manifest V3 that completely locks your browser with a password, protecting your tabs and privacy.
