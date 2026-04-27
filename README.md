@@ -1,5 +1,4 @@
 <img width="595" height="478" alt="image" src="https://github.com/user-attachments/assets/3e2ec160-f1f2-4281-9f08-788af95a58a2" />
-
 # Browser Password Protection Extension
 
 A cross-browser extension built with Manifest V3 that completely locks your browser with a password, protecting your tabs and privacy.
@@ -24,3 +23,6 @@ A cross-browser extension built with Manifest V3 that completely locks your brow
 1. **Setup Phase:** You are asked to set a Master Password and answer 3 distinct security questions.
 2. **Locking:** When idle or manually locked, the extension safely extracts all open URLs, closes all windows, and opens a standalone full-screen window for authentication.
 3. **Restoring:** Once the correct password is provided, the extension reads the saved session and recreates your workspace exactly as you left it.
+
+---
+Developed by <a href="https://github.com/ecomcodeLab" target="_blank">ecomcodelab</a>
