@@ -39,6 +39,18 @@
       color: var(--text-muted);
       margin-top: 1rem;
     }
+    .footer-link {
+      text-align: center;
+      font-size: 0.75rem;
+      margin-top: 0.5rem;
+    }
+    .footer-link a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+    .footer-link a:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
@@ -58,6 +70,9 @@
     <button id="btn-settings" class="secondary">Settings</button>
     
     <div class="version">v1.0.0</div>
+    <div class="footer-link">
+      Developed by <a href="https://github.com/ecomcodeLab" target="_blank">ecomcodelab</a>
+    </div>
   </div>
 
   <script src="popup.js"></script>
