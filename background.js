@@ -3,179 +3,193 @@ importScripts('utils.js');
 let lockWindowId = null;
 let isLocking = false;
 
-// Initialize extension state on startup
-chrome.runtime.onStartup.addListener(checkAndLockBrowser);
-chrome.runtime.onInstalled.addListener((details) => {
+chrome.runtime.onStartup.addListener(lockOnBrowserStart);
+chrome.runtime.onInstalled.addListener(async (details) => {
   if (details.reason === 'install') {
-    chrome.tabs.create({ url: 'setup.html' });
-  } else {
-    checkAndLockBrowser();
+    await chrome.storage.local.set({ isAuthenticated: false });
+    await chrome.tabs.create({ url: chrome.runtime.getURL('setup.html') });
+    return;
   }
+
+  await lockOnBrowserStart();
 });
 
-// Load idle settings
-async function initializeIdleDetection() {
-  const data = await chrome.storage.local.get(['idleTimeEnabled', 'idleTimeSeconds']);
-  if (data.idleTimeEnabled && data.idleTimeSeconds) {
-    chrome.idle.setDetectionInterval(data.idleTimeSeconds);
+// Always force authentication after a real browser restart. The previous
+// isAuthenticated value is intentionally ignored here.
+async function lockOnBrowserStart() {
+  const { passwordHash } = await chrome.storage.local.get('passwordHash');
+
+  if (!passwordHash) {
+    await initializeIdleDetection();
+    return;
   }
+
+  await chrome.storage.local.set({ isAuthenticated: false });
+  await lockBrowser({ preserveExistingSession: true });
+  await initializeIdleDetection();
 }
 
-// Listen for idle state changes
+async function initializeIdleDetection() {
+  const { idleTimeSeconds } = await chrome.storage.local.get('idleTimeSeconds');
+  chrome.idle.setDetectionInterval(Number(idleTimeSeconds) || 300);
+}
+
 chrome.idle.onStateChanged.addListener(async (newState) => {
-  if (newState === 'idle' || newState === 'locked') {
-    const data = await chrome.storage.local.get(['idleTimeEnabled', 'isAuthenticated', 'passwordHash']);
-    if (data.idleTimeEnabled && data.isAuthenticated && data.passwordHash) {
-      await lockBrowser();
-    }
+  if (newState !== 'idle' && newState !== 'locked') return;
+
+  const data = await chrome.storage.local.get([
+    'idleTimeEnabled',
+    'isAuthenticated',
+    'passwordHash'
+  ]);
+
+  if (data.idleTimeEnabled && data.isAuthenticated && data.passwordHash) {
+    await lockBrowser({ preserveExistingSession: false });
   }
 });
 
-// Main lock function
-async function lockBrowser() {
-  if (isLocking) return;
+async function lockBrowser({ preserveExistingSession = false } = {}) {
+  if (isLocking || lockWindowId !== null) return;
   isLocking = true;
 
   try {
-    const data = await chrome.storage.local.get(['isAuthenticated', 'passwordHash']);
-    if (!data.passwordHash) {
-      isLocking = false;
-      return; // Not set up yet
-    }
+    const { passwordHash } = await chrome.storage.local.get('passwordHash');
+    if (!passwordHash) return;
 
     await chrome.storage.local.set({ isAuthenticated: false });
 
-    // 1. Capture current windows and tabs
     const windows = await chrome.windows.getAll({ populate: true });
-    const sessionData = [];
+    const currentSession = [];
 
     for (const win of windows) {
-      // Don't save the lock screen window if it somehow exists
       if (win.id === lockWindowId) continue;
-      
-      const tabsToSave = win.tabs
-        .filter(t => !t.url.includes(chrome.runtime.id)) // Exclude extension pages
-        .map(t => ({ url: t.url, active: t.active, pinned: t.pinned }));
-      
-      if (tabsToSave.length > 0) {
-        sessionData.push({ windowId: win.id, tabs: tabsToSave, state: win.state });
+
+      const tabs = (win.tabs || [])
+        .filter((tab) => tab.url && !tab.url.startsWith(chrome.runtime.getURL('')))
+        .map((tab) => ({
+          url: tab.url,
+          active: Boolean(tab.active),
+          pinned: Boolean(tab.pinned)
+        }));
+
+      if (tabs.length) {
+        currentSession.push({
+          windowId: win.id,
+          tabs,
+          state: win.state || 'normal',
+          focused: Boolean(win.focused)
+        });
       }
     }
 
-    // Save session
+    const stored = await chrome.storage.local.get(['savedSession', 'sessionTimestamp']);
+    const sessionToKeep = preserveExistingSession && stored.savedSession?.length
+      ? stored.savedSession
+      : currentSession;
+
     await chrome.storage.local.set({
-      savedSession: sessionData,
-      sessionTimestamp: Date.now()
+      savedSession: sessionToKeep,
+      sessionTimestamp: preserveExistingSession && stored.sessionTimestamp
+        ? stored.sessionTimestamp
+        : Date.now()
     });
 
-    // 2. Create the lock window
-    const lockWin = await chrome.windows.create({
+    const lockWindow = await chrome.windows.create({
       url: chrome.runtime.getURL('lockscreen.html'),
       type: 'popup',
       state: 'fullscreen'
     });
-    lockWindowId = lockWin.id;
+    lockWindowId = lockWindow.id;
 
-    // 3. Close all other windows
-    for (const win of windows) {
-      if (win.id !== lockWindowId) {
-        chrome.windows.remove(win.id);
-      }
-    }
+    await Promise.all(
+      windows
+        .filter((win) => win.id !== lockWindowId)
+        .map((win) => chrome.windows.remove(win.id).catch(() => undefined))
+    );
   } catch (error) {
-    console.error("Error locking browser:", error);
+    console.error('Error locking browser:', error);
   } finally {
     isLocking = false;
   }
 }
 
-// Restore session
 async function restoreBrowser() {
-  const data = await chrome.storage.local.get(['savedSession']);
-  await chrome.storage.local.set({ isAuthenticated: true });
+  const { savedSession: session = [] } = await chrome.storage.local.get('savedSession');
 
-  const session = data.savedSession;
-  
-  if (session && session.length > 0) {
-    for (let i = 0; i < session.length; i++) {
-      const winData = session[i];
-      if (winData.tabs.length === 0) continue;
+  try {
+    for (const windowData of session) {
+      if (!windowData.tabs?.length) continue;
 
-      // Create window with first tab
-      const firstTab = winData.tabs[0];
-      const newWin = await chrome.windows.create({
+      const [firstTab, ...remainingTabs] = windowData.tabs;
+      const restoredWindow = await chrome.windows.create({
         url: firstTab.url,
-        state: winData.state === 'minimized' ? 'normal' : winData.state
+        state: windowData.state === 'minimized' ? 'normal' : (windowData.state || 'normal'),
+        focused: Boolean(windowData.focused)
       });
 
-      // Pin first tab if needed
-      if (firstTab.pinned) {
-        const tabs = await chrome.tabs.query({ windowId: newWin.id });
-        if (tabs.length > 0) chrome.tabs.update(tabs[0].id, { pinned: true });
+      const createdTabs = await chrome.tabs.query({ windowId: restoredWindow.id });
+      if (createdTabs[0] && firstTab.pinned) {
+        await chrome.tabs.update(createdTabs[0].id, { pinned: true });
       }
 
-      // Add remaining tabs
-      for (let j = 1; j < winData.tabs.length; j++) {
-        const tabData = winData.tabs[j];
+      for (const tab of remainingTabs) {
         await chrome.tabs.create({
-          windowId: newWin.id,
-          url: tabData.url,
-          active: tabData.active,
-          pinned: tabData.pinned
+          windowId: restoredWindow.id,
+          url: tab.url,
+          active: Boolean(tab.active),
+          pinned: Boolean(tab.pinned)
         });
       }
     }
-  } else {
-    // If no session, just open a new tab
-    chrome.windows.create({ state: 'maximized' });
-  }
 
-  // Clear session data and close lock window
-  await chrome.storage.local.remove(['savedSession', 'sessionTimestamp']);
-  if (lockWindowId) {
-    chrome.windows.remove(lockWindowId);
-    lockWindowId = null;
+    if (!session.length) await chrome.windows.create({ state: 'maximized' });
+
+    await chrome.storage.local.set({ isAuthenticated: true });
+    await chrome.storage.local.remove(['savedSession', 'sessionTimestamp']);
+
+    if (lockWindowId !== null) {
+      await chrome.windows.remove(lockWindowId).catch(() => undefined);
+      lockWindowId = null;
+    }
+
+    await initializeIdleDetection();
+  } catch (error) {
+    console.error('Error restoring browser session:', error);
+    throw error;
   }
-  
-  // Reset idle timer
-  initializeIdleDetection();
 }
 
-// Prevent closing the lock window without authentication
 chrome.windows.onRemoved.addListener(async (windowId) => {
-  if (windowId === lockWindowId) {
-    lockWindowId = null;
-    const data = await chrome.storage.local.get(['isAuthenticated', 'passwordHash']);
-    if (!data.isAuthenticated && data.passwordHash) {
-      // User tried to bypass by closing the lock window. Re-lock immediately.
-      lockBrowser();
-    }
+  if (windowId !== lockWindowId) return;
+
+  lockWindowId = null;
+  const data = await chrome.storage.local.get(['isAuthenticated', 'passwordHash']);
+  if (data.passwordHash && !data.isAuthenticated) {
+    await lockBrowser({ preserveExistingSession: true });
   }
 });
 
-async function checkAndLockBrowser() {
-  const data = await chrome.storage.local.get(['passwordHash', 'isAuthenticated']);
-  if (data.passwordHash && !data.isAuthenticated) {
-    lockBrowser();
-  }
-  initializeIdleDetection();
-}
-
-// Message handler
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'lockBrowser') {
-    lockBrowser().then(() => sendResponse({ success: true }));
+    lockBrowser({ preserveExistingSession: false })
+      .then(() => sendResponse({ success: true }))
+      .catch((error) => sendResponse({ success: false, error: error.message }));
     return true;
   }
+
   if (request.action === 'unlockBrowser') {
-    restoreBrowser().then(() => sendResponse({ success: true }));
+    restoreBrowser()
+      .then(() => sendResponse({ success: true }))
+      .catch((error) => sendResponse({ success: false, error: error.message }));
     return true;
   }
+
   if (request.action === 'updateIdleTime') {
-    if (request.enabled && request.seconds) {
-      chrome.idle.setDetectionInterval(request.seconds);
-    }
-    sendResponse({ success: true });
+    initializeIdleDetection()
+      .then(() => sendResponse({ success: true }))
+      .catch((error) => sendResponse({ success: false, error: error.message }));
     return true;
   }
+
+  return false;
 });
