@@ -3,30 +3,38 @@ importScripts('utils.js');
 let lockWindowId = null;
 let isLocking = false;
 
-chrome.runtime.onStartup.addListener(lockOnBrowserStart);
+const SESSION_LOCK_KEY = 'startupLockApplied';
+
 chrome.runtime.onInstalled.addListener(async (details) => {
   if (details.reason === 'install') {
     await chrome.storage.local.set({ isAuthenticated: false });
     await chrome.tabs.create({ url: chrome.runtime.getURL('setup.html') });
-    return;
   }
-
-  await lockOnBrowserStart();
 });
 
-// Always force authentication after a real browser restart. The previous
-// isAuthenticated value is intentionally ignored here.
-async function lockOnBrowserStart() {
-  const { passwordHash } = await chrome.storage.local.get('passwordHash');
+// Runs on EVERY service worker start, i.e. on browser start AND whenever the
+// worker wakes up. chrome.storage.session is cleared when the browser closes,
+// so a missing flag means this is a fresh browser session.
+chrome.runtime.onStartup.addListener(() => enforceStartupLock());
 
-  if (!passwordHash) {
-    await initializeIdleDetection();
-    return;
-  }
+async function enforceStartupLock() {
+  const { passwordHash, lockOnStartup } = await chrome.storage.local.get([
+    'passwordHash',
+    'lockOnStartup'
+  ]);
 
+  await initializeIdleDetection();
+
+  // Default: startup lock is ON.
+  if (lockOnStartup === false) return;
+  if (!passwordHash) return;
+
+  const session = await chrome.storage.session.get(SESSION_LOCK_KEY);
+  if (session[SESSION_LOCK_KEY]) return; // already locked/handled in this browser run
+
+  await chrome.storage.session.set({ [SESSION_LOCK_KEY]: true });
   await chrome.storage.local.set({ isAuthenticated: false });
   await lockBrowser({ preserveExistingSession: true });
-  await initializeIdleDetection();
 }
 
 async function initializeIdleDetection() {

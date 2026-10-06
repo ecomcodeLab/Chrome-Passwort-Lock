@@ -1,21 +1,29 @@
 document.addEventListener('DOMContentLoaded', async () => {
   const idleEnable = document.getElementById('idle-enable');
   const idleTime = document.getElementById('idle-time');
+  const startupLock = document.getElementById('startup-lock');
   let currentPasswordHash = '';
 
   // Load initial settings
   try {
-    const data = await chrome.storage.local.get(['idleTimeEnabled', 'idleTimeSeconds', 'passwordHash']);
+    const data = await chrome.storage.local.get([
+      'idleTimeEnabled',
+      'idleTimeSeconds',
+      'passwordHash',
+      'lockOnStartup'
+    ]);
     currentPasswordHash = data.passwordHash;
-    
+
     if (data.idleTimeEnabled !== undefined) {
       idleEnable.checked = data.idleTimeEnabled;
     }
     if (data.idleTimeSeconds) {
       idleTime.value = data.idleTimeSeconds.toString();
     }
+    // Default is ON when never configured.
+    startupLock.checked = data.lockOnStartup !== false;
   } catch (e) {
-    console.error("Error loading settings", e);
+    console.error('Error loading settings', e);
   }
 
   // Save Idle Settings
@@ -28,13 +36,25 @@ document.addEventListener('DOMContentLoaded', async () => {
       idleTimeSeconds: seconds
     });
 
-    chrome.runtime.sendMessage({ 
-      action: 'updateIdleTime', 
-      enabled: enabled, 
-      seconds: seconds 
+    chrome.runtime.sendMessage({
+      action: 'updateIdleTime',
+      enabled: enabled,
+      seconds: seconds
     }, () => {
       showMessage('status-msg', 'Auto-lock settings saved successfully!', false);
     });
+  });
+
+  // Save Startup Lock setting
+  document.getElementById('btn-save-startup').addEventListener('click', async () => {
+    await chrome.storage.local.set({ lockOnStartup: startupLock.checked });
+    showMessage(
+      'status-msg',
+      startupLock.checked
+        ? 'Password will be required on every browser start.'
+        : 'Password on browser start is disabled.',
+      false
+    );
   });
 
   // Change Password
@@ -67,12 +87,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const newHash = await hashString(newPass);
     await chrome.storage.local.set({ passwordHash: newHash });
     currentPasswordHash = newHash;
-    
+
     // Clear inputs
     document.getElementById('current-password').value = '';
     document.getElementById('new-password').value = '';
     document.getElementById('confirm-new-password').value = '';
-    
+
     showMessage('status-msg', 'Password updated successfully!', false);
   });
 
@@ -88,7 +108,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('btn-verify-sq').addEventListener('click', async () => {
     const current = document.getElementById('sq-current-password').value;
     if (!current) return;
-    
+
     const hash = await hashString(current);
     if (hash === currentPasswordHash) {
       document.getElementById('sq-verify-section').style.display = 'none';
@@ -102,7 +122,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const q1 = document.getElementById('q1').value;
     const q2 = document.getElementById('q2').value;
     const q3 = document.getElementById('q3').value;
-    
+
     const a1 = document.getElementById('a1').value.trim().toLowerCase();
     const a2 = document.getElementById('a2').value.trim().toLowerCase();
     const a3 = document.getElementById('a3').value.trim().toLowerCase();
@@ -137,7 +157,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('sq-verify-section').style.display = 'block';
     document.getElementById('sq-update-section').style.display = 'none';
     document.getElementById('sq-current-password').value = '';
-    
+
     showMessage('status-msg', 'Security questions updated successfully!', false);
   });
 });
