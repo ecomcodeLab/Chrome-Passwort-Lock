@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Browser Lock",
-  "version": "1.0.0",
-  "description": "Protects your browser with a password, idle timeout, and session preservation.",
+  "version": "1.1.0",
+  "description": "Protects your browser with a password, startup lock, idle timeout, and session preservation.",
   "permissions": [
     "storage",
     "tabs",

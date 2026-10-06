@@ -13,6 +13,19 @@
 
     <div id="status-msg" class="message"></div>
 
+    <!-- Startup Lock -->
+    <div class="mb-4">
+      <h3>Lock on Browser Start</h3>
+      <hr style="margin: 1rem 0;">
+
+      <div class="checkbox-group">
+        <input type="checkbox" id="startup-lock" checked>
+        <label for="startup-lock">Require password every time the browser is opened</label>
+      </div>
+      <p class="mb-3" style="font-size: 0.85rem;">When enabled, the browser is locked as soon as it starts and your tabs are restored only after entering the master password.</p>
+      <button id="btn-save-startup">Save Startup Lock Setting</button>
+    </div>
+
     <!-- Auto-Lock Settings -->
     <div class="mb-4">
       <h3>Auto-Lock Settings</h3>
