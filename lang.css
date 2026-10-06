@@ -1,0 +1,32 @@
+/* Language switcher – styled to blend into the card it sits in. */
+
+.lang-bar {
+  display: flex;
+  justify-content: center;
+  margin: 0.75rem 0 1rem;
+}
+
+.lang-switcher {
+  width: auto;
+  min-width: 130px;
+  padding: 0.4rem 0.75rem;
+  background-color: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.lang-switcher:hover,
+.lang-switcher:focus {
+  outline: none;
+  border-color: var(--primary);
+  color: var(--text-main);
+}
+
+.lang-switcher option {
+  background-color: var(--bg-card);
+  color: var(--text-main);
+}

@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Browser Locked</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="lang.css">
   <style>
     /* Full screen lock overrides */
     body {
@@ -16,13 +17,36 @@
       font-weight: bold;
       margin-bottom: 1rem;
     }
+    .reset-wait {
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 1rem;
+    }
   </style>
+  <!-- Language dictionaries MUST load before i18n.js so t() never
+       runs against an undefined I18N object (that crashed the page
+       scripts and left every button dead). -->
+  <script src="languages/en.js"></script>
+  <script src="languages/de.js"></script>
+  <script src="languages/es.js"></script>
+  <script src="languages/fr.js"></script>
+  <script src="languages/it.js"></script>
+  <script src="languages/pt.js"></script>
+  <script src="languages/ru.js"></script>
+  <script src="languages/zh.js"></script>
+  <script src="languages/ja.js"></script>
+  <script src="languages/ko.js"></script>
+  <script src="languages/hi.js"></script>
+  <script src="languages/ar.js"></script>
+  <script src="languages/tr.js"></script>
 </head>
 <body>
   <div class="container">
     <div class="text-center">
       <img src="icons/icon48.png" alt="Lock" class="icon-logo">
-      <h1 id="main-title">Browser Locked</h1>
+      <h1 id="main-title" data-i18n="browserLocked">Browser Locked</h1>
+      <div class="lang-bar" id="lang-switcher"></div>
     </div>
 
     <div id="status-msg" class="message"></div>
@@ -30,41 +54,63 @@
     <!-- Login Section -->
     <div id="login-section">
       <div class="form-group mb-4">
-        <input type="password" id="login-password" placeholder="Enter master password" autofocus>
+        <input type="password" id="login-password" data-i18n-placeholder="enterPassword" placeholder="Enter master password" autofocus>
       </div>
-      <button id="btn-unlock" class="mb-3">
+      <button type="button" id="btn-unlock" class="mb-3">
         <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path></svg>
-        Unlock Browser
+        <span data-i18n="unlock">Unlock Browser</span>
       </button>
       <div class="text-center">
-        <span class="link" id="link-forgot">Forgot Password?</span>
+        <span class="link" id="link-forgot" data-i18n="forgotPassword">Forgot Password?</span>
       </div>
     </div>
 
-    <!-- Recovery Questions Section -->
+    <!-- Recovery Questions Section: reached via "Forgot Password?".
+         Below the questions is the link "Forgot the answers?" which
+         leads to the full reset (waiting period chosen at setup). -->
     <div id="recovery-section">
       <div class="progress-text" id="recovery-progress">Question 1 of 3</div>
       <div class="form-group mb-4">
         <label id="recovery-question-label">Loading question...</label>
-        <input type="text" id="recovery-answer" placeholder="Your answer" autocomplete="off">
+        <input type="text" id="recovery-answer" data-i18n-placeholder="yourAnswer" placeholder="Your answer" autocomplete="off">
       </div>
-      <button id="btn-recovery-next" class="mb-3">Next</button>
-      <button id="btn-recovery-cancel" class="secondary">Cancel</button>
+      <button type="button" id="btn-recovery-next" class="mb-3" data-i18n="next">Next</button>
+      <button type="button" id="btn-recovery-cancel" class="secondary mb-3" data-i18n="cancel">Cancel</button>
+      <div class="text-center">
+        <span class="link" id="link-forgot-answers" data-i18n="forgotQuestions">Forgot the answers?</span>
+      </div>
+    </div>
+
+    <!-- Full Reset Section: reachable ONLY through the recovery
+         flow ("Forgot the answers?"). The waiting period was chosen
+         ONCE during setup (resetWaitDays) and is shown here - the
+         user is never asked for it again. Until it elapses the
+         browser stays locked. A pending reset shows its remaining
+         time. -->
+    <div id="fullreset-section">
+      <h2 data-i18n="fullResetTitle">Full Reset</h2>
+      <p class="mb-3 text-center" data-i18n="fullResetDesc">If you can no longer answer your security questions, you can schedule a complete re-setup. For security, this only happens after a waiting period – during this time the browser stays locked.</p>
+      <p class="mb-3 text-center" id="reset-wait-days-text" style="font-weight: 600; color: var(--text-main);"></p>
+      <button type="button" id="btn-schedule-reset" class="danger mb-3" data-i18n="scheduleReset">Schedule Full Reset</button>
+      <button type="button" id="btn-fullreset-cancel" class="secondary" data-i18n="cancel">Cancel</button>
+      <div class="reset-wait" id="reset-wait-info"></div>
     </div>
 
     <!-- Reset Password Section -->
     <div id="reset-section">
-      <p class="mb-3 text-center">Authentication successful. Create a new master password.</p>
+      <h2 id="reset-title" data-i18n="resetTitle">Reset Password</h2>
+      <p class="mb-3 text-center" data-i18n="resetDesc">Authentication successful. Create a new master password.</p>
       <div class="form-group">
-        <input type="password" id="new-password" placeholder="New Password (min 6 chars)">
+        <input type="password" id="new-password" data-i18n-placeholder="newPassword" placeholder="New Password (min 6 chars)">
       </div>
       <div class="form-group mb-4">
-        <input type="password" id="confirm-new-password" placeholder="Confirm New Password">
+        <input type="password" id="confirm-new-password" data-i18n-placeholder="confirmNewPassword" placeholder="Confirm New Password">
       </div>
-      <button id="btn-reset-password">Reset & Unlock</button>
+      <button type="button" id="btn-reset-password" data-i18n="resetUnlock">Reset & Unlock</button>
     </div>
   </div>
 
+  <script src="i18n.js"></script>
   <script src="utils.js"></script>
   <script src="lockscreen.js"></script>
 </body>

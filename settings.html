@@ -4,104 +4,192 @@
   <meta charset="UTF-8">
   <title>Browser Lock Settings</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="lang.css">
+  <!-- Language dictionaries MUST load before i18n.js so t() never
+       runs against an undefined I18N object (that crashed the page
+       scripts and left every button dead). -->
+  <script src="languages/en.js"></script>
+  <script src="languages/de.js"></script>
+  <script src="languages/es.js"></script>
+  <script src="languages/fr.js"></script>
+  <script src="languages/it.js"></script>
+  <script src="languages/pt.js"></script>
+  <script src="languages/ru.js"></script>
+  <script src="languages/zh.js"></script>
+  <script src="languages/ja.js"></script>
+  <script src="languages/ko.js"></script>
+  <script src="languages/hi.js"></script>
+  <script src="languages/ar.js"></script>
+  <script src="languages/tr.js"></script>
 </head>
 <body>
   <div class="container large">
     <div class="text-center mb-4">
-      <h2>Extension Settings</h2>
+      <h2 data-i18n="extensionSettings">Extension Settings</h2>
+      <div class="lang-bar" id="lang-switcher"></div>
     </div>
 
     <div id="status-msg" class="message"></div>
 
     <!-- Startup Lock -->
     <div class="mb-4">
-      <h3>Lock on Browser Start</h3>
+      <h3 data-i18n="lockOnStart">Lock on Browser Start</h3>
       <hr style="margin: 1rem 0;">
 
       <div class="checkbox-group">
         <input type="checkbox" id="startup-lock" checked>
-        <label for="startup-lock">Require password every time the browser is opened</label>
+        <label for="startup-lock" data-i18n="requirePassword">Require password every time the browser is opened</label>
       </div>
-      <p class="mb-3" style="font-size: 0.85rem;">When enabled, the browser is locked as soon as it starts and your tabs are restored only after entering the master password.</p>
-      <button id="btn-save-startup">Save Startup Lock Setting</button>
+      <p class="mb-3" style="font-size: 0.85rem;" data-i18n="startupDesc">When enabled, the browser is locked as soon as it starts and your tabs are restored only after entering the master password.</p>
+      <button type="button" id="btn-save-startup" data-i18n="saveStartup">Save Startup Lock Setting</button>
     </div>
 
     <!-- Auto-Lock Settings -->
     <div class="mb-4">
-      <h3>Auto-Lock Settings</h3>
+      <h3 data-i18n="autoLock">Auto-Lock Settings</h3>
       <hr style="margin: 1rem 0;">
-      
+
       <div class="checkbox-group">
         <input type="checkbox" id="idle-enable">
-        <label for="idle-enable">Enable Auto-Lock when idle</label>
+        <label for="idle-enable" data-i18n="enableIdle">Enable Auto-Lock when idle</label>
       </div>
-      
+
       <div class="form-group">
-        <label for="idle-time">Idle Timeout Duration</label>
+        <label for="idle-time" data-i18n="idleTimeout">Idle Timeout Duration</label>
         <select id="idle-time">
-          <option value="60">1 minute</option>
-          <option value="180">3 minutes</option>
-          <option value="300" selected>5 minutes (Default)</option>
-          <option value="600">10 minutes</option>
-          <option value="900">15 minutes</option>
-          <option value="1800">30 minutes</option>
-          <option value="3600">1 hour</option>
+          <option value="60" data-i18n="min1">1 minute</option>
+          <option value="180" data-i18n="min3">3 minutes</option>
+          <option value="300" selected data-i18n="min5">5 minutes (Default)</option>
+          <option value="600" data-i18n="min10">10 minutes</option>
+          <option value="900" data-i18n="min15">15 minutes</option>
+          <option value="1800" data-i18n="min30">30 minutes</option>
+          <option value="3600" data-i18n="hour1">1 hour</option>
         </select>
       </div>
-      <button id="btn-save-idle">Save Auto-Lock Settings</button>
+
+      <button type="button" id="btn-save-idle" data-i18n="saveIdle">Save Auto-Lock Settings</button>
+    </div>
+
+    <!-- PANIC key -->
+    <div class="mb-4">
+      <h3 data-i18n="panicTitle">PANIC Key</h3>
+      <hr style="margin: 1rem 0;">
+
+      <div class="checkbox-group">
+        <input type="checkbox" id="panic-enable">
+        <label for="panic-enable" data-i18n="panicEnable">Enable PANIC key to lock the browser instantly</label>
+      </div>
+
+      <div class="form-group">
+        <label for="panic-key" data-i18n="panicKeyChoice">PANIC key combination</label>
+        <select id="panic-key">
+          <option value="Ctrl+Shift+L" selected>Ctrl + Shift + L</option>
+          <option value="Ctrl+Alt+L">Ctrl + Alt + L</option>
+          <option value="Ctrl+Shift+K">Ctrl + Shift + K</option>
+          <option value="Ctrl+Alt+P">Ctrl + Alt + P</option>
+          <option value="Alt+Shift+L">Alt + Shift + L</option>
+        </select>
+      </div>
+
+      <p class="mb-3" style="font-size: 0.85rem;" data-i18n="panicShortcutHint">Chrome manages the actual shortcut. Set your chosen combination under chrome://extensions/shortcuts.</p>
+      <button type="button" id="btn-save-panic" data-i18n="savePanic">Save PANIC Key Setting</button>
+    </div>
+
+    <!-- Private tabs -->
+    <div class="mb-4">
+      <h3 data-i18n="privateTabsTitle">Private Tabs – Close on Lock</h3>
+      <hr style="margin: 1rem 0;">
+
+      <p class="mb-3" style="font-size: 0.85rem;" data-i18n="privateTabsDesc">Tabs listed here are closed when the browser locks and are NOT restored after unlocking – e.g. banking or e-mail tabs. Add the exact URL of a tab (copy it from the address bar).</p>
+
+      <div class="form-group">
+        <input type="text" id="excluded-url-input" data-i18n-placeholder="excludedUrlPlaceholder" placeholder="https://example.com">
+      </div>
+      <button type="button" id="btn-add-excluded" class="mb-3" data-i18n="addPrivateTab">Add Private Tab</button>
+
+      <ul id="excluded-list" class="excluded-list"></ul>
+    </div>
+
+    <!-- Export / Import -->
+    <div class="mb-4">
+      <h3 data-i18n="exportImportTitle">Export / Import Settings</h3>
+      <hr style="margin: 1rem 0;">
+
+      <p class="mb-3" style="font-size: 0.85rem;" data-i18n="exportImportDesc">Export your configuration (settings and private tabs – NEVER passwords or answers) as a file and import it on another computer.</p>
+
+      <button type="button" id="btn-export" class="mb-3" data-i18n="exportSettings">Export Settings</button>
+      <button type="button" id="btn-import" class="secondary" data-i18n="importSettings">Import Settings</button>
+      <input type="file" id="import-file" accept="application/json" style="display: none;">
     </div>
 
     <!-- Change Password -->
     <div class="mb-4">
-      <h3>Change Master Password</h3>
+      <h3 data-i18n="changePassword">Change Master Password</h3>
       <hr style="margin: 1rem 0;">
-      
+
       <div class="form-group">
-        <input type="password" id="current-password" placeholder="Current Password">
+        <input type="password" id="current-password" data-i18n-placeholder="currentPassword" placeholder="Current Password">
       </div>
       <div class="form-group">
-        <input type="password" id="new-password" placeholder="New Password (min 6 chars)">
+        <input type="password" id="new-password" data-i18n-placeholder="newPassword" placeholder="New Password (min 6 chars)">
       </div>
       <div class="form-group">
-        <input type="password" id="confirm-new-password" placeholder="Confirm New Password">
+        <input type="password" id="confirm-new-password" data-i18n-placeholder="confirmNewPassword" placeholder="Confirm New Password">
       </div>
-      <button id="btn-change-password">Update Password</button>
+      <button type="button" id="btn-change-password" data-i18n="updatePassword">Update Password</button>
     </div>
 
     <!-- Security Questions -->
     <div class="mb-2">
-      <h3>Update Security Questions</h3>
+      <h3 data-i18n="updateQuestions">Update Security Questions</h3>
       <hr style="margin: 1rem 0;">
-      
+
+      <div id="sq-msg" class="message"></div>
+
+      <!-- Shown only when the browser is LOCKED: password verification required first. -->
       <div id="sq-verify-section">
-        <p class="mb-3">Verify your current password to update security questions.</p>
+        <p class="mb-3" data-i18n="verifyDesc">Verify your current password to update security questions.</p>
         <div class="form-group">
-          <input type="password" id="sq-current-password" placeholder="Current Password">
+          <input type="password" id="sq-current-password" data-i18n-placeholder="currentPassword" placeholder="Current Password">
         </div>
-        <button id="btn-verify-sq">Verify to Update</button>
+        <button type="button" id="btn-verify-sq" data-i18n="verifyToUpdate">Verify to Update</button>
       </div>
 
+      <!-- Question editor. Shown directly when unlocked, or after
+           verification when locked. -->
       <div id="sq-update-section" style="display: none;">
         <div class="form-group">
-          <label>Question 1</label>
+          <label data-i18n="question1">Question 1</label>
           <select id="q1"></select>
-          <input type="text" id="a1" placeholder="New Answer" class="mt-1">
+          <input type="text" id="a1" data-i18n-placeholder="newAnswer" placeholder="New Answer" class="mt-1">
         </div>
         <div class="form-group">
-          <label>Question 2</label>
+          <label data-i18n="question2">Question 2</label>
           <select id="q2"></select>
-          <input type="text" id="a2" placeholder="New Answer" class="mt-1">
+          <input type="text" id="a2" data-i18n-placeholder="newAnswer" placeholder="New Answer" class="mt-1">
         </div>
         <div class="form-group">
-          <label>Question 3</label>
+          <label data-i18n="question3">Question 3</label>
           <select id="q3"></select>
-          <input type="text" id="a3" placeholder="New Answer" class="mt-1">
+          <input type="text" id="a3" data-i18n-placeholder="newAnswer" placeholder="New Answer" class="mt-1">
         </div>
-        <button id="btn-save-sq">Save Security Questions</button>
+        <button type="button" id="btn-save-sq" data-i18n="saveQuestions">Save Security Questions</button>
+      </div>
+
+      <!-- Final confirmation: after editing, the master password
+           must be re-entered before anything is persisted. -->
+      <div id="sq-confirm-section" style="display: none;">
+        <p class="mb-3" data-i18n="confirmChanges">Confirm your changes by re-entering your master password.</p>
+        <div class="form-group">
+          <input type="password" id="sq-confirm-password" data-i18n-placeholder="masterPasswordConfirm" placeholder="Master Password (confirmation)" autofocus>
+        </div>
+        <button type="button" id="btn-confirm-sq" data-i18n="confirmSave">Confirm & Save</button>
+        <button type="button" id="btn-cancel-sq" class="secondary mt-3" data-i18n="discard">Discard Changes</button>
       </div>
     </div>
   </div>
 
+  <script src="i18n.js"></script>
   <script src="utils.js"></script>
   <script src="settings.js"></script>
 </body>

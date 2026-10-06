@@ -201,8 +201,11 @@ hr {
   margin: 2rem 0;
 }
 
-/* Specific to setup */
-#step2 { display: none; }
+/* Specific to setup: only step 1 is visible on page load.
+   Steps 2 and 3 are shown by setup.js via showStep(). */
+#step2, #step3 { display: none; }
 
-/* Specific to lockscreen */
-#recovery-section, #reset-section { display: none; }
+/* Specific to lockscreen: only the login section is visible on
+   page load. Recovery, full reset and password reset are shown
+   by lockscreen.js via the "Forgot Password?" flow. */
+#recovery-section, #fullreset-section, #reset-section { display: none; }

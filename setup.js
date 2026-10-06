@@ -1,102 +1,147 @@
 document.addEventListener('DOMContentLoaded', () => {
+  initI18n('lang-switcher');
+
   const step1 = document.getElementById('step1');
   const step2 = document.getElementById('step2');
+  const step3 = document.getElementById('step3');
   const dot1 = document.getElementById('dot1');
   const dot2 = document.getElementById('dot2');
+  const dot3 = document.getElementById('dot3');
   const subtitle = document.getElementById('subtitle');
+  const questionIds = ['q1', 'q2', 'q3'];
   let masterPassword = '';
+  let busy = false;
 
-  const selects = [document.getElementById('q1'), document.getElementById('q2'), document.getElementById('q3')];
-  selects.forEach((select) => {
-    select.innerHTML = '<option value="">Select a question...</option>';
-    SECURITY_QUESTIONS.forEach((question, index) => {
-      const option = document.createElement('option');
-      option.value = String(index);
-      option.textContent = question;
-      select.appendChild(option);
+  function fillQuestionSelects() {
+    questionIds.forEach((id) => populateQuestionSelect(document.getElementById(id)));
+    syncQuestionSelects(questionIds);
+  }
+  fillQuestionSelects();
+
+  // Rebuild the question dropdowns when the language changes so the
+  // question texts appear in the selected language.
+  document.addEventListener('langchange', fillQuestionSelects);
+
+  // A question chosen in one dropdown disappears from the others.
+  questionIds.forEach((id) => {
+    document.getElementById(id).addEventListener('change', () => {
+      syncQuestionSelects(questionIds);
     });
   });
+
+  function showStep(step) {
+    [step1, step2, step3].forEach((el) => { el.style.display = 'none'; });
+    [dot1, dot2, dot3].forEach((el) => { el.classList.remove('active'); });
+    step.style.display = 'block';
+    if (step === step1) dot1.classList.add('active');
+    if (step === step2) dot2.classList.add('active');
+    if (step === step3) dot3.classList.add('active');
+  }
+
+  // ---------- Step 1 -> 2 (password only, NO waiting period here) ----------
 
   document.getElementById('btn-next').addEventListener('click', () => {
     const password = document.getElementById('password').value;
     const confirmation = document.getElementById('confirm-password').value;
 
     if (password.length < 6) {
-      showMessage('status-msg', 'Password must be at least 6 characters.', true);
+      showMessage('status-msg', t('passwordMin'), true);
       return;
     }
     if (password !== confirmation) {
-      showMessage('status-msg', 'Passwords do not match.', true);
+      showMessage('status-msg', t('passwordsMismatch'), true);
       return;
     }
 
     masterPassword = password;
-    step1.style.display = 'none';
-    step2.style.display = 'block';
-    dot1.classList.remove('active');
-    dot2.classList.add('active');
-    subtitle.textContent = 'Set up Security Questions (CRITICAL)';
+    showStep(step2);
+    subtitle.textContent = t('subtitleQuestions');
   });
 
-  document.getElementById('btn-back').addEventListener('click', () => {
-    step2.style.display = 'none';
-    step1.style.display = 'block';
-    dot2.classList.remove('active');
-    dot1.classList.add('active');
-    subtitle.textContent = 'Protect your browsing session with a master password.';
-  });
+  // ---------- Step 2 -> 3 ----------
 
-  document.getElementById('btn-finish').addEventListener('click', async () => {
-    const questionIndexes = [
-      document.getElementById('q1').value,
-      document.getElementById('q2').value,
-      document.getElementById('q3').value
-    ];
-    const answers = [
-      document.getElementById('a1').value.trim().toLowerCase(),
-      document.getElementById('a2').value.trim().toLowerCase(),
-      document.getElementById('a3').value.trim().toLowerCase()
-    ];
+  document.getElementById('btn-next2').addEventListener('click', () => {
+    const questionIndexes = questionIds.map((id) => document.getElementById(id).value);
+    const answers = ['a1', 'a2', 'a3'].map((id) =>
+      document.getElementById(id).value.trim().toLowerCase()
+    );
 
     if (questionIndexes.some((value) => !value)) {
-      showMessage('status-msg', 'Please select 3 questions.', true);
+      showMessage('sq-msg', t('select3'), true);
       return;
     }
     if (new Set(questionIndexes).size !== 3) {
-      showMessage('status-msg', 'Please select 3 different questions.', true);
+      showMessage('sq-msg', t('select3Different'), true);
       return;
     }
     if (answers.some((answer) => answer.length < 3)) {
-      showMessage('status-msg', 'Answers must be at least 3 characters long.', true);
+      showMessage('sq-msg', t('answersMin'), true);
       return;
     }
 
+    // Keep the captured answers in memory until the final save.
+    window.__pendingAnswers = { questionIndexes, answers };
+    showStep(step3);
+    subtitle.textContent = t('waitPeriod');
+  });
+
+  document.getElementById('btn-back').addEventListener('click', () => {
+    showStep(step1);
+    subtitle.textContent = t('subtitleSetup');
+  });
+
+  document.getElementById('btn-back2').addEventListener('click', () => {
+    showStep(step2);
+    subtitle.textContent = t('subtitleQuestions');
+  });
+
+  // ---------- Step 3 (LAST step): waiting period + finish ----------
+
+  document.getElementById('btn-finish').addEventListener('click', async () => {
+    if (busy) return;
+    const pending = window.__pendingAnswers;
+    if (!pending) {
+      showStep(step2);
+      return;
+    }
+
+    busy = true;
     try {
-      const [passwordHash, ...answerHashes] = await Promise.all([
-        hashString(masterPassword),
-        ...answers.map(hashString)
+      const [passwordRecord, ...answerRecords] = await Promise.all([
+        createSecretRecord(masterPassword),
+        ...pending.answers.map(createSecretRecord)
       ]);
 
       await chrome.storage.local.set({
-        passwordHash,
-        securityQuestion1: SECURITY_QUESTIONS[Number(questionIndexes[0])],
-        securityAnswer1Hash: answerHashes[0],
-        securityQuestion2: SECURITY_QUESTIONS[Number(questionIndexes[1])],
-        securityAnswer2Hash: answerHashes[1],
-        securityQuestion3: SECURITY_QUESTIONS[Number(questionIndexes[2])],
-        securityAnswer3Hash: answerHashes[2],
-        // Setup is the only exception: the user should not be locked before
-        // they have finished configuring the extension.
+        passwordHash: passwordRecord,
+        securityQuestion1: SECURITY_QUESTIONS[Number(pending.questionIndexes[0])],
+        securityAnswer1Hash: answerRecords[0],
+        securityQuestion2: SECURITY_QUESTIONS[Number(pending.questionIndexes[1])],
+        securityAnswer2Hash: answerRecords[1],
+        securityQuestion3: SECURITY_QUESTIONS[Number(pending.questionIndexes[2])],
+        securityAnswer3Hash: answerRecords[2],
         isAuthenticated: true,
         idleTimeEnabled: true,
-        idleTimeSeconds: 300
+        idleTimeSeconds: 300,
+        lockOnStartup: true,
+        // PANIC key is configured ONLY in the settings (freely
+        // choosable combination). Setup stores the OFF state and a
+        // sensible default so the settings page has a starting value.
+        panicEnabled: false,
+        panicKey: 'Ctrl+Shift+L',
+        // Waiting period for a full reset, chosen ONCE here (last
+        // step). The lockscreen reuses this value and never asks again.
+        resetWaitDays: Number(document.getElementById('reset-wait-days').value),
+        excludedTabs: []
       });
 
-      showMessage('status-msg', 'Setup complete! You can now close this tab.', false);
+      showMessage('status-msg', t('setupComplete'), false);
       setTimeout(() => window.close(), 2000);
     } catch (error) {
       console.error(error);
-      showMessage('status-msg', 'Error saving settings.', true);
+      showMessage('status-msg', t('errorSaving'), true);
+    } finally {
+      busy = false;
     }
   });
 });

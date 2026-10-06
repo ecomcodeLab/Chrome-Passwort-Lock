@@ -4,62 +4,102 @@
   <meta charset="UTF-8">
   <title>Browser Lock Setup</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="lang.css">
+  <!-- Language dictionaries MUST load before i18n.js so t() never
+       runs against an undefined I18N object (that crashed the page
+       scripts and left every button dead). -->
+  <script src="languages/en.js"></script>
+  <script src="languages/de.js"></script>
+  <script src="languages/es.js"></script>
+  <script src="languages/fr.js"></script>
+  <script src="languages/it.js"></script>
+  <script src="languages/pt.js"></script>
+  <script src="languages/ru.js"></script>
+  <script src="languages/zh.js"></script>
+  <script src="languages/ja.js"></script>
+  <script src="languages/ko.js"></script>
+  <script src="languages/hi.js"></script>
+  <script src="languages/ar.js"></script>
+  <script src="languages/tr.js"></script>
 </head>
 <body>
-  <div class="container large">
-    <div class="text-center">
-      <img src="icons/icon48.png" alt="Logo" class="icon-logo" id="logo-img">
-      <h1>Welcome to Browser Lock</h1>
-      <p id="subtitle">Protect your browsing session with a master password.</p>
-    </div>
-
-    <div class="step-indicator">
-      <div class="step-dot active" id="dot1"></div>
-      <div class="step-dot" id="dot2"></div>
+  <div class="container">
+    <div class="text-center mb-4">
+      <img src="icons/icon48.png" alt="Logo" class="icon-logo">
+      <h2 data-i18n="welcome">Welcome to Browser Lock</h2>
+      <p id="subtitle" data-i18n="subtitleSetup">Protect your browsing session with a master password.</p>
+      <div class="lang-bar" id="lang-switcher"></div>
     </div>
 
     <div id="status-msg" class="message"></div>
 
-    <!-- Step 1: Master Password -->
+    <div class="step-indicator">
+      <div class="step-dot active" id="dot1"></div>
+      <div class="step-dot" id="dot2"></div>
+      <div class="step-dot" id="dot3"></div>
+    </div>
+
+    <!-- Step 1: Master Password ONLY. No waiting period here - the
+         waiting period is configured in the LAST step of setup. -->
     <div id="step1">
       <div class="form-group">
-        <label for="password">Create Master Password</label>
-        <input type="password" id="password" placeholder="Minimum 6 characters" minlength="6">
+        <label data-i18n="createPassword">Create Master Password</label>
+        <input type="password" id="password" data-i18n-placeholder="passwordPlaceholder" placeholder="Minimum 6 characters">
       </div>
-      <div class="form-group mb-4">
-        <label for="confirm-password">Confirm Password</label>
-        <input type="password" id="confirm-password" placeholder="Re-enter password">
+      <div class="form-group">
+        <label data-i18n="confirmPassword">Confirm Password</label>
+        <input type="password" id="confirm-password" data-i18n-placeholder="confirmPassword" placeholder="Confirm Password">
       </div>
-      <button id="btn-next">Continue</button>
+      <button type="button" id="btn-next" data-i18n="continue">Continue</button>
     </div>
 
     <!-- Step 2: Security Questions -->
     <div id="step2">
-      <p class="mb-3 text-center">Set up 3 security questions to recover your password if forgotten. Answers must be at least 3 characters.</p>
-      
+      <p class="mb-3" data-i18n="qIntro">Set up 3 security questions to recover your password if forgotten. Answers must be at least 3 characters.</p>
+
+      <div id="sq-msg" class="message"></div>
+
       <div class="form-group">
-        <label for="q1">Security Question 1</label>
+        <label data-i18n="question1">Security Question 1</label>
         <select id="q1"></select>
-        <input type="text" id="a1" placeholder="Your Answer" class="mt-1">
+        <input type="text" id="a1" data-i18n-placeholder="yourAnswer" placeholder="Your Answer" class="mt-1">
       </div>
-      
       <div class="form-group">
-        <label for="q2">Security Question 2</label>
+        <label data-i18n="question2">Security Question 2</label>
         <select id="q2"></select>
-        <input type="text" id="a2" placeholder="Your Answer" class="mt-1">
+        <input type="text" id="a2" data-i18n-placeholder="yourAnswer" placeholder="Your Answer" class="mt-1">
       </div>
-      
-      <div class="form-group mb-4">
-        <label for="q3">Security Question 3</label>
+      <div class="form-group">
+        <label data-i18n="question3">Security Question 3</label>
         <select id="q3"></select>
-        <input type="text" id="a3" placeholder="Your Answer" class="mt-1">
+        <input type="text" id="a3" data-i18n-placeholder="yourAnswer" placeholder="Your Answer" class="mt-1">
       </div>
-      
-      <button id="btn-finish">Complete Setup</button>
-      <button id="btn-back" class="secondary mt-3">Back</button>
+      <button type="button" id="btn-back" class="secondary mb-3" data-i18n="back">Back</button>
+      <button type="button" id="btn-next2" data-i18n="continue">Continue</button>
+    </div>
+
+    <!-- Step 3 (LAST step): Waiting period for full reset.
+         The PANIC key is NOT configured here - it lives only in the
+         settings, where the combination can be chosen freely. -->
+    <div id="step3">
+      <p class="mb-3" data-i18n="panicIntro">For your protection: if you ever forget both your master password and your security answers, you can request a full reset. So that nobody else can do this easily, there is a waiting period that you choose now. Until it ends, the browser stays locked.</p>
+
+      <div class="form-group">
+        <label data-i18n="waitPeriod">Waiting period</label>
+        <select id="reset-wait-days">
+          <option value="5" data-i18n="days5">5 days</option>
+          <option value="7" selected data-i18n="days7">7 days</option>
+          <option value="10" data-i18n="days10">10 days</option>
+        </select>
+      </div>
+      <p class="mb-3" style="font-size: 0.85rem;" data-i18n="waitPeriodDesc">The waiting period protects you: if someone else tries to reset your browser, you have time to notice and cancel it with your master password. During the waiting period the browser stays locked.</p>
+
+      <button type="button" id="btn-back2" class="secondary mb-3" data-i18n="back">Back</button>
+      <button type="button" id="btn-finish" data-i18n="completeSetup">Complete Setup</button>
     </div>
   </div>
 
+  <script src="i18n.js"></script>
   <script src="utils.js"></script>
   <script src="setup.js"></script>
 </body>
