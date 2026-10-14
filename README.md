@@ -4,7 +4,9 @@
 
 ## Deutsch
 
-Browser Lock schützt den Browser mit einem lokal gespeicherten Master-Passwort. Beim **Start des Browsers wird die Authentifizierung immer erneut verlangt**, auch wenn der Browser vor dem Schließen entsperrt war.
+**Browser Lock im Chrome Web Store:** [Hier herunterladen](https://chromewebstore.google.com/detail/browser-lock/jepjmljbjjplhbgcgljhikflkmlbkgpk)
+
+Browser Lock schützt den Browser mit einem lokal gespeichertem Master-Passwort. Beim **Start des Browsers wird die Authentifizierung immer erneut verlangt**, auch wenn der Browser vor dem Schließen entsperrt war.
 
 ### Funktionen
 
@@ -35,6 +37,8 @@ Der Hintergrunddienst ignoriert den zuletzt gespeicherten Wert von `isAuthentica
 ---
 
 ## English
+
+**Browser Lock on Chrome Web Store:** [Download here](https://chromewebstore.google.com/detail/browser-lock/jepjmljbjjplhbgcgljhikflkmlbkgpk)
 
 Browser Lock protects your browser with a locally stored master password. **Authentication is always required when the browser starts**, even if the browser was unlocked before it was closed.
 
