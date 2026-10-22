@@ -1,4 +1,5 @@
-<img width="516" height="413" alt="Image" src="https://github.com/user-attachments/assets/d49e5f81-0ac4-4b81-8375-7a77e844a9a3" />
+<img width="516" height="413" alt="browserlockchromeimage" src="https://github.com/user-attachments/assets/dc26d769-f53d-484f-baed-a5b0baa9486b" />
+
 
 # Browser Lock
 
